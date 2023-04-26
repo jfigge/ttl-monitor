@@ -5,9 +5,9 @@ import (
 	"time"
 	"ttl-monitor/internal/common"
 	"ttl-monitor/internal/managers"
-	"ttl-monitor/internal/pages/helppage"
-	"ttl-monitor/internal/pages/historypage"
-	"ttl-monitor/internal/pages/mainpage"
+	"ttl-monitor/internal/pages/front"
+	"ttl-monitor/internal/pages/help"
+	"ttl-monitor/internal/pages/history"
 )
 
 var (
@@ -22,9 +22,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	mainPage = t.AddPage(mainpage.NewMainPage())
-	historyPage = t.AddPage(historypage.NewHistoryPage())
-	helpPage = t.AddPage(helppage.NewHeLpPage())
+	mainPage = t.AddPage(front.NewFrontPage())
+	historyPage = t.AddPage(history.NewHistoryPage())
+	helpPage = t.AddPage(help.NewHelpPage())
 
 	go jibberish(t)
 	go input(t)

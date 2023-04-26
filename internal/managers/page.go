@@ -2,13 +2,14 @@ package managers
 
 import (
 	"fmt"
+	"ttl-monitor/internal/display"
 )
 
 type PageFunc func(input *KeyInput) bool
 
 type Page interface {
 	Initialize()
-	AddArea(area Area)
+	CreateArea(x, y, w, h int, fullPage bool, renderer display.Renderer)
 	Areas() []Area
 	PreDraw()
 	Draw()
@@ -21,11 +22,11 @@ type AbstractPage struct {
 	areas []Area
 }
 
-func (p *AbstractPage) AddArea(area Area) {
+func (p *AbstractPage) CreateArea(x, y, w, h int, full bool, renderer display.Renderer) {
 	if p.areas == nil {
 		p.areas = make([]Area, 0, 10)
 	}
-	p.areas = append(p.areas, area)
+	p.areas = append(p.areas, NewAbstractArea(x, y, w, h, full, renderer))
 }
 
 func (p *AbstractPage) Areas() []Area {
@@ -49,6 +50,5 @@ func (p *AbstractPage) Terminate() {
 }
 
 func (p *AbstractPage) ProcessInput(keyInput *KeyInput) bool {
-	fmt.Printf("Key Code: %d, Ascii Code: %d\n", keyInput.KeyCode, keyInput.Ascii)
 	return false
 }

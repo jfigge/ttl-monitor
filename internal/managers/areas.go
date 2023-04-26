@@ -7,7 +7,6 @@ import (
 type Area interface {
 	IsDirty() bool
 	SetDirty(dirty bool)
-	GetDisplay() *display.Display
 	Draw()
 }
 
@@ -32,12 +31,12 @@ func (a *AbstractArea) IsDirty() bool {
 	return a.dirty
 }
 
-func (a *AbstractArea) SetDirty(dirty bool) {
-	a.dirty = dirty
+func (a *AbstractArea) getDisplay() *display.Display {
+	return a.display
 }
 
-func (a *AbstractArea) GetDisplay() *display.Display {
-	return a.display
+func (a *AbstractArea) SetDirty(dirty bool) {
+	a.dirty = dirty
 }
 
 func (a *AbstractArea) Draw() {

@@ -38,7 +38,7 @@ func NewDisplay(offsetCol int, offsetRow int, cols int, rows int, full bool) *Di
 	if full {
 		d.cls = func() { fmt.Printf(clearScreen) }
 	} else {
-		d.cls = func() { ClearArea(cols, rows)(d) }
+		d.cls = func() { ClearArea(d) }
 	}
 	return d
 }

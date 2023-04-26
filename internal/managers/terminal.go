@@ -267,6 +267,7 @@ func (t *Terminal) Terminate() {
 	for i := 0; i < l; i++ {
 		t.wg.Done()
 	}
+	display.NewDisplay(0, 0, t.width, t.height, true).Cls()
 }
 
 func handleInput(ctx context.Context, pageMeta *PageMeta) {
