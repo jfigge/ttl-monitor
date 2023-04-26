@@ -4,8 +4,14 @@ import (
 	"ttl-monitor/internal/display"
 )
 
-type Area struct {
-	id       AreaId
+type Area interface {
+	IsDirty() bool
+	SetDirty(dirty bool)
+	GetDisplay() *display.Display
+	Draw()
+}
+
+type AbstractArea struct {
 	width    int
 	height   int
 	renderer display.Renderer
@@ -13,8 +19,8 @@ type Area struct {
 	dirty    bool
 }
 
-func NewArea(x, y, w, h int, full bool, renderer display.Renderer) *Area {
-	return &Area{
+func NewAbstractArea(x, y, w, h int, full bool, renderer display.Renderer) *AbstractArea {
+	return &AbstractArea{
 		width:    w,
 		height:   h,
 		renderer: renderer,
@@ -22,19 +28,19 @@ func NewArea(x, y, w, h int, full bool, renderer display.Renderer) *Area {
 	}
 }
 
-func (a *Area) IsDirty() bool {
+func (a *AbstractArea) IsDirty() bool {
 	return a.dirty
 }
 
-func (a *Area) SetDirty(dirty bool) {
+func (a *AbstractArea) SetDirty(dirty bool) {
 	a.dirty = dirty
 }
 
-func (p *Area) GetDisplay() *display.Display {
-	return p.display
+func (a *AbstractArea) GetDisplay() *display.Display {
+	return a.display
 }
 
-func (a *Area) Draw() {
+func (a *AbstractArea) Draw() {
 	if !a.dirty {
 		return
 	}

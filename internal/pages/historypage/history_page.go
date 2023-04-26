@@ -6,7 +6,12 @@ import (
 )
 
 type HistoryPage struct {
-	managers.BasePage
+	managers.AbstractPage
+}
+
+func (p *HistoryPage) KeyEvent(keyInput *managers.KeyInput) bool {
+	// TODO implement me
+	panic("implement me")
 }
 
 func (p *HistoryPage) PostDraw() {

@@ -12,17 +12,17 @@ import (
 type MainPage struct {
 	Y int
 	x int
-	managers.BasePage
-	left       *managers.Area
-	upperRight *managers.Area
-	lowerRight *managers.Area
+	managers.AbstractPage
+	left       managers.Area
+	upperRight managers.Area
+	lowerRight managers.Area
 }
 
 func NewMainPage() *MainPage {
 	page := &MainPage{
-		left:       managers.NewArea(0, 0, 20, 10, false, display.BoxDrawer(20, 10)),
-		upperRight: managers.NewArea(20, 0, 20, 5, false, RandomDrawer(20, 5)),
-		lowerRight: managers.NewArea(20, 5, 20, 5, false, RandomDrawer(20, 5)),
+		left:       NewArea(0, 0, 20, 10, false, display.BoxDrawer),
+		upperRight: NewArea(20, 0, 20, 5, false, RandomDrawer),
+		lowerRight: NewArea(20, 5, 20, 5, false, RandomDrawer),
 	}
 	page.AddArea(page.left)
 	page.AddArea(page.upperRight)
@@ -33,29 +33,48 @@ func NewMainPage() *MainPage {
 	return page
 }
 
-func RandomDrawer(w int, h int) func(d *display.Display) {
-	return func(d *display.Display) {
-		for i := 0; i < h; i++ {
-			title := fmt.Sprintf(" %d x %d ", w, h)
-			if i == 0 {
-				left := w/2 - (len(title) / 2)
-				right := w - len(title) - left
-				if left > 1 || right > 1 {
-					d.PrintAtf(1, 1, "%s%s%s", strings.Repeat("#", left), title, strings.Repeat("#", right))
-				} else {
-					d.PrintAtf(1, 1, "%s", strings.Repeat("#", w))
-				}
-			} else if i == h-1 {
-				d.PrintAtf(1, i+1, "%s", strings.Repeat("#", w))
-			} else {
-				d.PrintAtf(1, i+1, "#%s#", strings.Repeat(" ", w-2))
-			}
-		}
-		s := strings.Repeat("#", rand.Intn(w-2))
-		d.PrintAtf(w/2-len(s)/2, h/2+1, "%s", s)
+func (p *MainPage) ProcessInput(keyInput *managers.KeyInput) bool {
+	if keyInput.Ascii == 'q' {
+		return true
+	}
+	fmt.Printf("Key Code: %d, Ascii Code: %d\n", keyInput.KeyCode, keyInput.Ascii)
+	return false
+}
+
+type X struct {
+	managers.AbstractArea
+}
+
+func NewArea(x, y, w, h int, full bool, renderer display.Renderer) managers.Area {
+	return &X{
+		AbstractArea: *managers.NewAbstractArea(x, y, w, h, full, renderer),
 	}
 }
-func (p *MainPage) redrawUpperRight(area *managers.Area) {
+
+func RandomDrawer(d *display.Display) {
+	w := d.Cols()
+	h := d.Rows()
+	for i := 0; i < h; i++ {
+		title := fmt.Sprintf(" %d x %d ", w, h)
+		if i == 0 {
+			left := w/2 - (len(title) / 2)
+			right := w - len(title) - left
+			if left > 1 || right > 1 {
+				d.PrintAtf(1, 1, "%s%s%s", strings.Repeat("#", left), title, strings.Repeat("#", right))
+			} else {
+				d.PrintAtf(1, 1, "%s", strings.Repeat("#", w))
+			}
+		} else if i == h-1 {
+			d.PrintAtf(1, i+1, "%s", strings.Repeat("#", w))
+		} else {
+			d.PrintAtf(1, i+1, "#%s#", strings.Repeat(" ", w-2))
+		}
+	}
+	s := strings.Repeat("#", rand.Intn(w-2))
+	d.PrintAtf(w/2-len(s)/2, h/2+1, "%s", s)
+}
+
+func (p *MainPage) redrawUpperRight(area managers.Area) {
 	t := time.NewTicker(3 * time.Second)
 	for true {
 		select {
@@ -72,7 +91,7 @@ var (
 	h = 1
 )
 
-func (p *MainPage) bound(a *managers.Area) {
+func (p *MainPage) bound(a managers.Area) {
 	counter := 0
 	d := a.GetDisplay()
 	t := time.NewTicker(200 * time.Millisecond)

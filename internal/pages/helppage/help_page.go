@@ -6,7 +6,12 @@ import (
 )
 
 type HelpPage struct {
-	managers.BasePage
+	managers.AbstractPage
+}
+
+func (p *HelpPage) KeyEvent(keyInput *managers.KeyInput) bool {
+	// TODO implement me
+	panic("implement me")
 }
 
 func (p *HelpPage) PostDraw() {

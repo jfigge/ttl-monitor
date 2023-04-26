@@ -1,5 +1,5 @@
 // https://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html#colors
-package display
+package old
 
 // import (
 //	"fmt"

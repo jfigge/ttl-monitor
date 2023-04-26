@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"time"
+	"ttl-monitor/internal/common"
 	"ttl-monitor/internal/managers"
 	"ttl-monitor/internal/pages/helppage"
 	"ttl-monitor/internal/pages/historypage"
@@ -25,12 +26,14 @@ func main() {
 	historyPage = t.AddPage(historypage.NewHistoryPage())
 	helpPage = t.AddPage(helppage.NewHeLpPage())
 
+	go jibberish(t)
 	go input(t)
 	t.ShowPage(mainPage)
 	t.Wait()
+	t.Terminate()
 }
 
-func input(t *managers.Terminal) {
+func jibberish(t *managers.Terminal) {
 	counter := 0
 	for true {
 		time.Sleep(1 * time.Second)
@@ -43,4 +46,19 @@ func input(t *managers.Terminal) {
 		}
 	}
 	return
+}
+
+func input(t *managers.Terminal) {
+	for true {
+		keys, err := t.ReadChar()
+		if err != nil {
+			continue
+		}
+		pageMeta := t.ActivePage()
+		if pageMeta != nil {
+			pageMeta.ProcessInput(keys)
+		} else {
+			common.Debugf("Lost input.  Keycode: %d / Ascii key: %d", keys.KeyCode, keys.Ascii)
+		}
+	}
 }
