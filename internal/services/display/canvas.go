@@ -3,6 +3,8 @@ package display
 import (
 	"fmt"
 	"regexp"
+	"strings"
+
 	"ttl-monitor/internal/tty"
 )
 
@@ -13,12 +15,10 @@ const (
 )
 
 var (
-	HEX = [16]string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"}
 	rex = regexp.MustCompile("\u001b\\[[0-9]{1,2}m")
-	// lock sync.Mutex
 )
 
-type Display struct {
+type Canvas struct {
 	col       int
 	row       int
 	offsetCol int
@@ -28,8 +28,8 @@ type Display struct {
 	cls       func()
 }
 
-func NewDisplay(offsetCol int, offsetRow int, cols int, rows int, full bool) *Display {
-	d := &Display{
+func NewCanvas(offsetCol int, offsetRow int, cols int, rows int, full bool) *Canvas {
+	d := &Canvas{
 		offsetCol: offsetCol,
 		offsetRow: offsetRow,
 		cols:      cols,
@@ -43,58 +43,67 @@ func NewDisplay(offsetCol int, offsetRow int, cols int, rows int, full bool) *Di
 	return d
 }
 
-func (d *Display) Cols() int {
-	return d.cols
+func ClearArea(d *Canvas) {
+	w := d.Cols()
+	h := d.Rows()
+	blank := strings.Repeat(" ", w)
+	for i := 0; i < h; i++ {
+		d.PrintAtf(1, i+1, blank)
+	}
 }
 
-func (d *Display) Rows() int {
-	return d.rows
+func (c *Canvas) Cols() int {
+	return c.cols
 }
 
-func (d *Display) Bell() {
+func (c *Canvas) Rows() int {
+	return c.rows
+}
+
+func (c *Canvas) Bell() {
 	fmt.Printf(tty.Bell)
 }
 
-func (d *Display) Start() {
-	d.At(1, d.row)
+func (c *Canvas) Start() {
+	c.At(1, c.row)
 }
 
-func (d *Display) Home() {
-	d.At(1, 1)
+func (c *Canvas) Home() {
+	c.At(1, 1)
 }
 
-func (d *Display) Cls() {
-	d.cls()
-	d.Home()
+func (c *Canvas) Cls() {
+	c.cls()
+	c.Home()
 }
 
-func (d *Display) At(col int, row int) bool {
+func (c *Canvas) At(col int, row int) bool {
 	str := tty.Bell
-	if col >= 1 && col <= d.cols && row >= 1 && row <= d.rows {
-		str = fmt.Sprintf(setPosition, row+d.offsetRow, col+d.offsetCol)
-		d.col = col
-		d.row = row
+	if col >= 1 && col <= c.cols && row >= 1 && row <= c.rows {
+		str = fmt.Sprintf(setPosition, row+c.offsetRow, col+c.offsetCol)
+		c.col = col
+		c.row = row
 	}
 	fmt.Printf(str)
 	return str != tty.Bell
 }
 
-func (d *Display) PrintAtf(col int, row int, text string, a ...interface{}) bool {
-	return d.PrintAt(col, row, fmt.Sprintf(text, a...))
+func (c *Canvas) PrintAtf(col int, row int, text string, a ...interface{}) bool {
+	return c.PrintAt(col, row, fmt.Sprintf(text, a...))
 }
-func (d *Display) PrintAt(col int, row int, text string) bool {
-	ok := d.At(col, row)
+func (c *Canvas) PrintAt(col int, row int, text string) bool {
+	ok := c.At(col, row)
 	if ok {
-		d.Print(text)
+		c.Print(text)
 	}
 	return ok
 }
-func (d *Display) Printf(text string, a ...interface{}) {
-	d.Print(fmt.Sprintf(text, a...))
+func (c *Canvas) Printf(text string, a ...interface{}) {
+	c.Print(fmt.Sprintf(text, a...))
 }
-func (d *Display) Print(text string) {
-	tokens, clean := d.Split(text)
-	max := d.cols - d.col + 1
+func (c *Canvas) Print(text string) {
+	tokens, clean := c.Split(text)
+	max := c.cols - c.col + 1
 	if len(clean) > max {
 		text = ""
 		length := 0
@@ -116,7 +125,7 @@ type token struct {
 	length int
 }
 
-func (d *Display) Split(text string) ([]token, string) {
+func (c *Canvas) Split(text string) ([]token, string) {
 	var result []token
 	clean := make([]byte, 0, len(text))
 	last := 0
@@ -136,14 +145,4 @@ func (d *Display) Split(text string) ([]token, string) {
 		clean = append(clean, t...)
 	}
 	return result, string(clean)
-}
-
-func BinData(data uint8) string {
-	return fmt.Sprintf("%08b", data)
-}
-func HexData(data uint8) string {
-	return fmt.Sprintf("%s%s", HEX[data>>4], HEX[data&15])
-}
-func HexAddress(address uint16) string {
-	return fmt.Sprintf("%s%s%s%s", HEX[address>>12], HEX[address>>8&15], HEX[address>>4&15], HEX[address&15])
 }

@@ -1,15 +1,16 @@
-package managers
+package display
 
 import (
 	"context"
-	"fmt"
-	"github.com/pkg/term"
-	xterm "golang.org/x/term"
 	"os"
 	"sync"
 	"time"
+
 	"ttl-monitor/internal/common"
-	"ttl-monitor/internal/display"
+	"ttl-monitor/internal/models"
+
+	"github.com/pkg/term"
+	xterm "golang.org/x/term"
 )
 
 type PageId int
@@ -33,11 +34,6 @@ type Terminal struct {
 	fd         int
 	ioTerm     *term.Term
 	pageOut    chan TermOutput
-}
-
-type KeyInput struct {
-	Ascii   int
-	KeyCode int
 }
 
 type ActionCode int
@@ -99,12 +95,12 @@ func (t *Terminal) ActivePage() *PageMeta {
 func (t *Terminal) AddPage(page Page) PageId {
 	nextPage++
 	pageMeta := &PageMeta{
-		id:      nextPage,
-		page:    page,
-		in:      make(chan KeyInput, 10),
-		out:     t.pageOut,
-		hidden:  true,
-		display: display.NewDisplay(0, 0, t.width, t.height, true),
+		id:     nextPage,
+		page:   page,
+		in:     make(chan models.KeyInput, 10),
+		out:    t.pageOut,
+		hidden: true,
+		canvas: NewCanvas(0, 0, t.width, t.height, true),
 	}
 
 	ctx := context.Background()
@@ -180,82 +176,6 @@ func (t *Terminal) Wait() {
 	t.wg.Wait()
 }
 
-func (t *Terminal) ReadChar() (*KeyInput, error) {
-	t.ioTerm, _ = term.Open("/dev/tty")
-	if t.ioTerm == nil {
-		return nil, fmt.Errorf("terminal unavailable")
-	} else {
-		defer func() {
-			if err := t.ioTerm.Restore(); err != nil {
-				common.Debugf("Failed to restore terminal mode: %v", err)
-			}
-			if err := t.ioTerm.Close(); err != nil {
-				common.Debugf("Failed to close terminal input: %v", err)
-			}
-		}()
-	}
-
-	if err := term.RawMode(t.ioTerm); err != nil {
-		return nil, common.Errorf("Failed to access terminal RawMode: %v", err)
-	}
-	bs := make([]byte, 5)
-
-	if err := t.ioTerm.SetReadTimeout(2 * time.Second); err != nil {
-		common.Warn("Failed to set read timeout")
-	}
-
-	var numRead int
-	var err error
-	keyInput := KeyInput{}
-	if numRead, err = t.ioTerm.Read(bs); err != nil {
-		if err.Error() != "EOF" {
-			if err = t.ioTerm.Restore(); err != nil {
-				err = common.Errorf("Failed to restore terminal mode: %v", err)
-			}
-			if err = t.ioTerm.Close(); err != nil {
-				err = common.Errorf("Failed to close terminal input: %v", err)
-			}
-		}
-		return nil, err
-	} else if numRead == 3 && bs[0] == 27 && bs[1] == 91 {
-		// Three-character control sequence, beginning with "ESC-[".
-
-		// Since there are no ASCII lines for arrow keys, we use
-		// Javascript key lines.
-		switch bs[2] {
-		case 65:
-			keyInput.KeyCode = 38 // Up
-		case 66:
-			keyInput.KeyCode = 40 // Down
-		case 67:
-			keyInput.KeyCode = 39 // Right
-		case 68:
-			keyInput.KeyCode = 37 // Left
-		}
-	} else if numRead == 3 && bs[0] == 0x1B && bs[1] == 0x4F {
-		switch bs[2] {
-		case 50:
-			keyInput.KeyCode = 101 // Option+1
-		case 51:
-			keyInput.KeyCode = 102 // Option+2
-		case 52:
-			keyInput.KeyCode = 102 // Option+3
-		case 53:
-			keyInput.KeyCode = 103 // Option+4
-		}
-	} else if numRead == 1 {
-		keyInput.Ascii = int(bs[0])
-	} else {
-		text := fmt.Sprintf("%d characters read.", numRead)
-		for i := 0; i < numRead; i++ {
-			text = fmt.Sprintf("%s %d:%s", text, i, display.HexData(bs[i]))
-		}
-		common.Warnf(text)
-		// Two characters read??
-	}
-	return &keyInput, nil
-}
-
 func (t *Terminal) Terminate() {
 	t.activePage = nil
 	for _, page := range t.pages {
@@ -267,7 +187,6 @@ func (t *Terminal) Terminate() {
 	for i := 0; i < l; i++ {
 		t.wg.Done()
 	}
-	display.NewDisplay(0, 0, t.width, t.height, true).Cls()
 }
 
 func handleInput(ctx context.Context, pageMeta *PageMeta) {

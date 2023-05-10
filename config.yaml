@@ -1,0 +1,6 @@
+screen:
+  width: 109
+  height: 42
+serial:
+  baud_rate: 115200
+  port_name: "/dev/cu.usbserial-1431110"
